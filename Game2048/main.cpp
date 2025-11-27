@@ -460,22 +460,16 @@ private:
 		}
 
 		//擦掉刚才输出的信息
-		auto ClearPrint = [](auto Y, auto X, const char *pText, const char *pExp = "") -> void
+		auto ClearPrint = [](auto Y, auto X) -> void
 		{
-			printf("\033[%u;%uH", Y, X);
-
-			size_t szLength = strlen(pText) + strlen(pExp);
-			while (szLength-- > 0)
-			{
-				putchar(' ');
-			}
+			printf("\033[%u;%uH\033[2K", Y, X);//清空整行
 		};
 
 		//重置Y
 		u16StartY = u16PrintStartY;
 		//擦除
-		ClearPrint(u16StartY += (u64Height * 2 + 1), u16StartX, pInfo);
-		ClearPrint(++u16StartY, u16StartX, pQuery, " (Y/N)");
+		ClearPrint(u16StartY += (u64Height * 2 + 1), u16StartX);
+		ClearPrint(++u16StartY, u16StartX);
 
 		//最后返回
 		return bRet;
