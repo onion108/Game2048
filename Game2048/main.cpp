@@ -75,7 +75,7 @@ private:
 		return u64PossibleValues[valueDist(randGen)];
 	}
 
-	bool TestMerge(void)
+	bool TestMerge(void) const
 	{
 		//查找所有格子的相邻，如果没有任何相邻且数值相同的格子，那么游戏失败
 		for (uint64_t Y = 0; Y < u64Height; ++Y)
@@ -211,10 +211,10 @@ private:
 	};
 
 
-	bool TestTailIndexRange(const Pos &p)
+	bool TestTailIndexRange(const Pos &p) const
 	{
 		return	p.i64X >= 0 && p.i64X < u64Width &&
-			p.i64Y >= 0 && p.i64Y < u64Height;
+				p.i64Y >= 0 && p.i64Y < u64Height;
 	}
 
 	uint64_t &GetTail(const Pos &posTarget)
@@ -481,6 +481,29 @@ private:
 		return bRet;
 	}
 
+	bool PrintKeyInfo(void) const
+	{
+		//缓存一下，不要修改原始变量
+		uint16_t u16StartY = u16PrintStartY;
+		uint16_t u16StartX = u16PrintStartX;
+
+		auto NewLine = [&](uint16_t u16LineMove = 1) -> void
+		{
+			printf("\033[%u;%uH", u16StartY += u16LineMove, u16StartX);
+		};
+		
+		printf(" W / Up Arrow    -> Up"); NewLine();
+		printf(" S / Down Arrow  -> Down"); NewLine();
+		printf(" A / Left Arrow  -> Left"); NewLine();
+		printf(" D / Right Arrow -> Right"); NewLine();
+		printf(" R               -> Restart"); NewLine();
+		printf(" Q               -> Quit"); NewLine(2);
+		
+		printf("Press Any key To Start...");
+
+		ci.WaitAnyKey();
+	}
+
 public:
 	Game2048(uint32_t u32Seed, uint16_t _u16PrintStartX = 1, uint16_t _u16PrintStartY = 1, double dSpawnWeights_2 = 0.8, double dSpawnWeights_4 = 0.2) :
 		u64Tile{},
@@ -508,6 +531,8 @@ public:
 		//然后才注册按键，防止出现提前按键问题
 		RegisterKey();
 		//初始化后，后续直接调用StartOrRestart则无问题
+		//打印一次按键信息
+		PrintKeyInfo();
 	}
 	
 	bool Loop(void)
