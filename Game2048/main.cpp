@@ -408,7 +408,7 @@ int main(void)
 	{
 		if (ci.AtLeastOne() != 0)
 		{
-			game.Print(20, 20);
+			game.Print();
 		}
 	}
 
