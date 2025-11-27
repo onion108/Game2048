@@ -442,7 +442,7 @@ private:
 		uint16_t u16StartX = u16PrintStartX;
 
 		//输出信息
-		printf("\033[%u;%uH%s", u16StartY += (u64Height + 1), u16StartX, pInfo);
+		printf("\033[%u;%uH%s", u16StartY += (u64Height * 2 + 1), u16StartX, pInfo);
 
 		//询问是否重开
 		printf("\033[%u;%uH%s (Y/N)", ++u16StartY, u16StartX, pQuery);
@@ -474,7 +474,7 @@ private:
 		//重置Y
 		u16StartY = u16PrintStartY;
 		//擦除
-		ClearPrint(u16StartY += (u64Height + 1), u16StartX, pInfo);
+		ClearPrint(u16StartY += (u64Height * 2 + 1), u16StartX, pInfo);
 		ClearPrint(++u16StartY, u16StartX, pQuery, " (Y/N)");
 
 		//最后返回
