@@ -481,11 +481,14 @@ private:
 		return bRet;
 	}
 
-	bool PrintKeyInfo(void) const
+	void PrintKeyInfo(void) const
 	{
 		//缓存一下，不要修改原始变量
 		uint16_t u16StartY = u16PrintStartY;
 		uint16_t u16StartX = u16PrintStartX;
+
+		//设置到指定位置
+		printf("\033[%u;%uH", u16StartY, u16StartX);
 
 		auto NewLine = [&](uint16_t u16LineMove = 1) -> void
 		{
@@ -502,6 +505,7 @@ private:
 		printf("Press Any key To Start...");
 
 		ci.WaitAnyKey();
+		printf("\033[2J\033[H");//清空屏幕并把光标回到左上角
 	}
 
 public:
@@ -526,13 +530,14 @@ public:
 
 	void Init(void)
 	{
+		//打印一次按键信息
+		PrintKeyInfo();
+
 		//这里必须先处理游戏
 		StartOrRestart();
 		//然后才注册按键，防止出现提前按键问题
 		RegisterKey();
 		//初始化后，后续直接调用StartOrRestart则无问题
-		//打印一次按键信息
-		PrintKeyInfo();
 	}
 	
 	bool Loop(void)
