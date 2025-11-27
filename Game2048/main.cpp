@@ -384,18 +384,27 @@ int main(void)
 
 	//注册按键
 	Console_Input ci;
+	using CILC = Console_Input::LeadCode;
 
-	ci.RegisterKey({ 'w' }, [&](auto &) -> long { return game.Move(Game2048::Up);});
-	ci.RegisterKey({ 'W' }, [&](auto &) -> long { return game.Move(Game2048::Up);});
+	auto UpFunc = [&](auto &) -> long { return game.Move(Game2048::Up);};
+	ci.RegisterKey({ 'w' }, UpFunc);
+	ci.RegisterKey({ 'W' }, UpFunc);
+	ci.RegisterKey({ 72, CILC::Code_E0 }, UpFunc);
 
-	ci.RegisterKey({ 'a' }, [&](auto &) -> long { return game.Move(Game2048::Lt);});
-	ci.RegisterKey({ 'A' }, [&](auto &) -> long { return game.Move(Game2048::Lt);});
-
-	ci.RegisterKey({ 's' }, [&](auto &) -> long { return game.Move(Game2048::Dn);});
-	ci.RegisterKey({ 'S' }, [&](auto &) -> long { return game.Move(Game2048::Dn);});
-
-	ci.RegisterKey({ 'd' }, [&](auto &) -> long { return game.Move(Game2048::Rt);});
-	ci.RegisterKey({ 'D' }, [&](auto &) -> long { return game.Move(Game2048::Rt);});
+	auto LtFunc = [&](auto &) -> long { return game.Move(Game2048::Lt); };
+	ci.RegisterKey({ 'a' }, LtFunc);
+	ci.RegisterKey({ 'A' }, LtFunc);
+	ci.RegisterKey({ 75, CILC::Code_E0 }, LtFunc);
+	
+	auto DnFunc = [&](auto &) -> long { return game.Move(Game2048::Dn); };
+	ci.RegisterKey({ 's' }, DnFunc);
+	ci.RegisterKey({ 'S' }, DnFunc);
+	ci.RegisterKey({ 80, CILC::Code_E0 }, DnFunc);
+	
+	auto RtFunc = [&](auto &) -> long { return game.Move(Game2048::Rt); };
+	ci.RegisterKey({ 'd' }, RtFunc);
+	ci.RegisterKey({ 'D' }, RtFunc);
+	ci.RegisterKey({ 77, CILC::Code_E0 }, RtFunc);
 
 	//游戏循环
 	while (true)
