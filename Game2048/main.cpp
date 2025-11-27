@@ -490,8 +490,7 @@ private:
 		};
 		
 		printf("========2048 Game========"); NewLine();
-		printf("        Key Guide        "); NewLine();
-		printf("-------------------------"); NewLine();
+		printf("--------Key Guide--------"); NewLine();
 		printf(" W / Up Arrow    -> Up"); NewLine();
 		printf(" S / Down Arrow  -> Down"); NewLine();
 		printf(" A / Left Arrow  -> Left"); NewLine();
