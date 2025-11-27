@@ -495,13 +495,18 @@ private:
 			printf("\033[%u;%uH", u16StartY += u16LineMove, u16StartX);
 		};
 		
+		printf("========2048 Game========"); NewLine();
+		printf("        Key Guide        "); NewLine();
+		printf("-------------------------"); NewLine();
 		printf(" W / Up Arrow    -> Up"); NewLine();
 		printf(" S / Down Arrow  -> Down"); NewLine();
 		printf(" A / Left Arrow  -> Left"); NewLine();
 		printf(" D / Right Arrow -> Right"); NewLine();
-		printf(" R               -> Restart"); NewLine();
-		printf(" Q               -> Quit"); NewLine(2);
-		
+		printf("-------------------------"); NewLine();
+		printf(" R -> Restart"); NewLine();
+		printf(" Q -> Quit"); NewLine();
+		printf("-------------------------"); NewLine(2);
+
 		printf("Press Any key To Start...");
 
 		ci.WaitAnyKey();
