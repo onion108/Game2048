@@ -30,7 +30,7 @@
 
 class Game2048
 {
-public:
+private:
 	using Direction_Raw = uint8_t;
 	enum Direction : Direction_Raw
 	{
@@ -47,6 +47,66 @@ public:
 		WinGame,
 		LostGame,
 	};
+
+	struct Pos
+	{
+	public:
+		int64_t i64X, i64Y;
+
+	public:
+		Pos operator+(const Pos &_Right) const
+		{
+			return
+			{
+				i64X + _Right.i64X,
+				i64Y + _Right.i64Y,
+			};
+		}
+
+		Pos operator-(const Pos &_Right) const
+		{
+			return
+			{
+				i64X - _Right.i64X,
+				i64Y - _Right.i64Y,
+			};
+		}
+
+		Pos &operator+=(const Pos &_Right)
+		{
+			i64X += _Right.i64X;
+			i64Y += _Right.i64Y;
+
+			return *this;
+		}
+
+		Pos &operator-=(const Pos &_Right)
+		{
+			i64X -= _Right.i64X;
+			i64Y -= _Right.i64Y;
+
+			return *this;
+		}
+
+		bool operator==(const Pos &_Right) const
+		{
+			return i64X == _Right.i64X && i64Y == _Right.i64Y;
+		}
+
+		bool operator!=(const Pos &_Right) const
+		{
+			return i64X != _Right.i64X || i64Y != _Right.i64Y;
+		}
+	};
+
+	constexpr const static inline Pos arrMoveDir[Direction::Enum_End] =
+	{
+		{ 0,-1},
+		{ 0, 1},
+		{-1, 0},
+		{ 1, 0},
+	};
+
 
 private:
 	constexpr const static inline uint64_t u64Width = 4;
@@ -150,66 +210,6 @@ private:
 		//设置游戏状态为游戏中
 		enGameStatus = InGame;
 	}
-
-	struct Pos
-	{
-	public:
-		int64_t i64X, i64Y;
-
-	public:
-		Pos operator+(const Pos &_Right) const
-		{
-			return
-			{
-				i64X + _Right.i64X,
-				i64Y + _Right.i64Y,
-			};
-		}
-
-		Pos operator-(const Pos &_Right) const
-		{
-			return
-			{
-				i64X - _Right.i64X,
-				i64Y - _Right.i64Y,
-			};
-		}
-
-		Pos &operator+=(const Pos &_Right)
-		{
-			i64X += _Right.i64X;
-			i64Y += _Right.i64Y;
-
-			return *this;
-		}
-
-		Pos &operator-=(const Pos &_Right)
-		{
-			i64X -= _Right.i64X;
-			i64Y -= _Right.i64Y;
-
-			return *this;
-		}
-
-		bool operator==(const Pos &_Right) const
-		{
-			return i64X == _Right.i64X && i64Y == _Right.i64Y;
-		}
-
-		bool operator!=(const Pos &_Right) const
-		{
-			return i64X != _Right.i64X || i64Y != _Right.i64Y;
-		}
-	};
-
-	constexpr const static inline Pos arrMoveDir[Direction::Enum_End] =
-	{
-		{ 0,-1},
-		{ 0, 1},
-		{-1, 0},
-		{ 1, 0},
-	};
-
 
 	bool TestTailIndexRange(const Pos &p) const
 	{
@@ -542,6 +542,7 @@ public:
 	{
 		switch (ci.AtLeastOne())//处理一次按键
 		{
+		default://其它返回，跳过处理
 		case 0://调用失败（没有移动）
 			return true;//直接返回
 			break;
@@ -550,8 +551,6 @@ public:
 			break;
 		case -1://用户提前退出
 			return false;//直接返回
-		default:
-			break;
 		}
 
 		switch (enGameStatus)//判断一下输赢
@@ -561,7 +560,6 @@ public:
 			{
 				return false;
 			}
-			
 			StartOrRestart();
 			break;
 		case Game2048::LostGame:
@@ -569,7 +567,6 @@ public:
 			{
 				return false;
 			}
-			
 			StartOrRestart();
 			break;
 		default:
