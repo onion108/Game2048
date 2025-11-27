@@ -222,7 +222,7 @@ private:
 		return u64Tile[posTarget.i64Y][posTarget.i64X];
 	}
 
-	bool MoveAndAddTile(Direction dir, const Pos &posTarget)
+	bool MoveAndAddTile(Direction dir, const Pos &posTarget, bool &bMerge)
 	{
 		if (GetTail(posTarget) == 0)
 		{
@@ -237,10 +237,17 @@ private:
 		while (true)
 		{
 			Pos posNext = posNew + posMove;//计算下一位置
-			if (!TestTailIndexRange(posNext) ||//如果下一位置超出范围或
-				(GetTail(posNext) != 0 && GetTail(posNext) != GetTail(posTarget)))//非0且不可合并
+			if (!TestTailIndexRange(posNext))//如果下一位置超出范围
 			{
 				break;//则跳过
+			}
+
+			if (GetTail(posNext) != 0)//如果下一位置非0
+			{
+				if (!bMerge || GetTail(posNext) != GetTail(posTarget))//当前不允许合并或值无法合并
+				{
+					break;//则跳过
+				}
 			}
 
 			//反之，当前索引没超出范围且posNext为0或可以合并
@@ -257,7 +264,8 @@ private:
 
 		if (GetTail(posNew) == GetTail(posTarget))
 		{
-			++u64EmptyCount;//合并后让出空间
+			bMerge = false;//设置状态为不可合并
+			++u64EmptyCount;//合并后更新空位计数
 		}
 
 		//直接把值加到当前位置
@@ -271,11 +279,12 @@ private:
 	bool MoveDn(void)
 	{
 		bool bMove = false;
+		bool bMerge = true;//默认状态为可合并
 		for (int64_t i64Cow = u64Height - 1 - 1; i64Cow > 0 - 1; i64Cow += -1)
 		{
 			for (int64_t i64Row = 0; i64Row != u64Width; i64Row += 1)
 			{
-				bool bRet = MoveAndAddTile(Direction::Dn, { i64Row,i64Cow });//额外保存变量，防止短路求值跳过调用
+				bool bRet = MoveAndAddTile(Direction::Dn, { i64Row,i64Cow }, bMerge);//额外保存变量，防止短路求值跳过调用
 				bMove |= bRet;
 			}
 		}
@@ -286,11 +295,12 @@ private:
 	bool MoveUp(void)
 	{
 		bool bMove = false;
+		bool bMerge = true;//默认状态为可合并
 		for (int64_t i64Cow = 0LL + 1; i64Cow < u64Height; i64Cow += 1)
 		{
 			for (int64_t i64Row = 0; i64Row != u64Width; i64Row += 1)
 			{
-				bool bRet = MoveAndAddTile(Direction::Up, { i64Row,i64Cow });//额外保存变量，防止短路求值跳过调用
+				bool bRet = MoveAndAddTile(Direction::Up, { i64Row,i64Cow }, bMerge);//额外保存变量，防止短路求值跳过调用
 				bMove |= bRet;
 			}
 		}
@@ -301,11 +311,12 @@ private:
 	bool MoveRt(void)
 	{
 		bool bMove = false;
+		bool bMerge = true;//默认状态为可合并
 		for (int64_t i64Row = u64Width - 1 - 1; i64Row > 0 - 1; i64Row += -1)
 		{
 			for (int64_t i64Cow = 0; i64Cow != u64Height; i64Cow += 1)
 			{
-				bool bRet = MoveAndAddTile(Direction::Rt, { i64Row,i64Cow });//额外保存变量，防止短路求值跳过调用
+				bool bRet = MoveAndAddTile(Direction::Rt, { i64Row,i64Cow }, bMerge);//额外保存变量，防止短路求值跳过调用
 				bMove |= bRet;
 			}
 		}
@@ -316,11 +327,12 @@ private:
 	bool MoveLt(void)
 	{
 		bool bMove = false;
+		bool bMerge = true;//默认状态为可合并
 		for (int64_t i64Row = 0LL + 1; i64Row < u64Width; i64Row += 1)
 		{
 			for (int64_t i64Cow = 0; i64Cow != u64Height; i64Cow += 1)
 			{
-				bool bRet = MoveAndAddTile(Direction::Lt, { i64Row,i64Cow });//额外保存变量，防止短路求值跳过调用
+				bool bRet = MoveAndAddTile(Direction::Lt, { i64Row,i64Cow }, bMerge);//额外保存变量，防止短路求值跳过调用
 				bMove |= bRet;
 			}
 		}
