@@ -43,6 +43,17 @@ private:
 	std::discrete_distribution<uint64_t> valueDist;//值生成-离散分布
 	std::uniform_int_distribution<uint64_t> posDist;//坐标生成-均匀分布
 
+public:
+	using Direction_Raw = uint8_t;
+	enum Direction : Direction_Raw
+	{
+		Up = 0,
+		Dn,
+		Lt,
+		Rt,
+		Enum_End,
+	};
+
 private:
 	uint64_t GetRandTileValue(void)
 	{
@@ -93,66 +104,6 @@ private:
 		u64EmptyCount = u64TotalSize;
 	}
 
-public:
-	Game2048(uint32_t u32Seed, double dSpawnWeights_2 = 0.8, double dSpawnWeights_4 = 0.2) :
-		u64Tile{},
-		u64EmptyCount(u64TotalSize),
-		randGen(u32Seed),
-		valueDist({ dSpawnWeights_2, dSpawnWeights_4 }),
-		posDist()
-	{}
-
-	~Game2048(void) = default;
-
-	Game2048(const Game2048 &) = delete;
-	Game2048(Game2048 &&) = delete;
-	Game2048 &operator=(const Game2048 &) = delete;
-	Game2048 &operator=(Game2048 &&) = delete;
-
-	void Start(void)
-	{
-		//清空格子
-		ClearTile();
-
-		//在地图中随机两点生成
-		SpawnNumInEmptySpace();
-		SpawnNumInEmptySpace();
-	}
-
-	void Print(uint16_t u16StartX = 1, uint16_t u16StartY = 1)//控制台起始坐标，注意不是从0开始的，行列都从1开始
-	{
-		printf("\033[%u;%uH", u16StartY, u16StartX);
-		for (auto &arrRow : u64Tile)
-		{
-			printf("---------------------\033[%u;%uH", ++u16StartY, u16StartX);
-			for (auto u64Elem : arrRow)
-			{
-				if (u64Elem != 0)
-				{
-					printf("|%-4llu", u64Elem);
-				}
-				else
-				{
-					printf("|%-4c", ' ');
-				}
-			}
-			printf("|\033[%u;%uH", ++u16StartY, u16StartX);
-		}
-		printf("---------------------\033[%u;%uH", ++u16StartY, u16StartX);
-	}
-
-
-	using Direction_Raw = uint8_t;
-	enum Direction : Direction_Raw
-	{
-		Up = 0,
-		Dn,
-		Lt,
-		Rt,
-		Enum_End,
-	};
-
-private:
 	struct Pos
 	{
 	public:
@@ -216,7 +167,7 @@ private:
 	bool TestTailIndexRange(const Pos &p)
 	{
 		return	p.i64X >= 0 && p.i64X < u64Width &&
-				p.i64Y >= 0 && p.i64Y < u64Height;
+			p.i64Y >= 0 && p.i64Y < u64Height;
 	}
 
 	uint64_t &GetTail(const Pos &posTarget)
@@ -340,6 +291,53 @@ private:
 	}
 
 public:
+	Game2048(uint32_t u32Seed, double dSpawnWeights_2 = 0.8, double dSpawnWeights_4 = 0.2) :
+		u64Tile{},
+		u64EmptyCount(u64TotalSize),
+		randGen(u32Seed),
+		valueDist({ dSpawnWeights_2, dSpawnWeights_4 }),
+		posDist()
+	{}
+
+	~Game2048(void) = default;
+
+	Game2048(const Game2048 &) = delete;
+	Game2048(Game2048 &&) = delete;
+	Game2048 &operator=(const Game2048 &) = delete;
+	Game2048 &operator=(Game2048 &&) = delete;
+
+	void Start(void)
+	{
+		//清空格子
+		ClearTile();
+
+		//在地图中随机两点生成
+		SpawnNumInEmptySpace();
+		SpawnNumInEmptySpace();
+	}
+
+	void Print(uint16_t u16StartX = 1, uint16_t u16StartY = 1)//控制台起始坐标，注意不是从0开始的，行列都从1开始
+	{
+		printf("\033[%u;%uH", u16StartY, u16StartX);
+		for (auto &arrRow : u64Tile)
+		{
+			printf("---------------------\033[%u;%uH", ++u16StartY, u16StartX);
+			for (auto u64Elem : arrRow)
+			{
+				if (u64Elem != 0)
+				{
+					printf("|%-4llu", u64Elem);
+				}
+				else
+				{
+					printf("|%-4c", ' ');
+				}
+			}
+			printf("|\033[%u;%uH", ++u16StartY, u16StartX);
+		}
+		printf("---------------------\033[%u;%uH", ++u16StartY, u16StartX);
+	}
+
 	bool Move(Direction dMove)
 	{
 		bool bRet = false;
@@ -369,7 +367,6 @@ public:
 
 		return bRet;
 	}
-
 };
 
 
@@ -411,7 +408,7 @@ int main(void)
 	{
 		if (ci.AtLeastOne() != 0)
 		{
-			game.Print();
+			game.Print(20, 20);
 		}
 	}
 
