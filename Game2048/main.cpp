@@ -5,7 +5,11 @@
 #include <span>
 #include <algorithm>
 
+#ifdef _WIN32
 #include "Console_Input.hpp"
+#elif defined(__linux__)
+#include "Console_Input_Linux.hpp"
+#endif
 
 /*
 游戏规则:
@@ -448,7 +452,6 @@ private:
 	void RegisterKey(void)
 	{
 		//注册按键
-		using CILC = Console_Input::LeadCode;
 
 		auto UpFunc = [&](auto &) -> long
 		{
@@ -480,7 +483,7 @@ private:
 		};
 		ci.RegisterKey(Console_Input::Keys::D, RtFunc);
 		ci.RegisterKey(Console_Input::Keys::SHIFT_D, RtFunc);
-		ci.RegisterKey(Console_Input::Keys::DOWN_ARROW, RtFunc);
+		ci.RegisterKey(Console_Input::Keys::RIGHT_ARROW, RtFunc);
 
 		auto RestartFunc = [&](auto &) -> long
 		{
