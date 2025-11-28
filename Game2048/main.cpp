@@ -129,12 +129,25 @@ private:
 	std::uniform_int_distribution<uint64_t> posDist;//坐标生成-均匀分布
 
 private:
+	//====================辅助函数====================
+	uint64_t &GetTail(const Pos &posTarget)
+	{
+		return u64Tile[posTarget.i64Y][posTarget.i64X];
+	}
+
 	uint64_t GetRandTileValue(void)
 	{
 		constexpr const static uint64_t u64PossibleValues[] = { 2, 4 };
 		return u64PossibleValues[valueDist(randGen)];
 	}
 
+	bool TestTailIndexRange(const Pos &p) const
+	{
+		return	p.i64X >= 0 && p.i64X < u64Width &&
+				p.i64Y >= 0 && p.i64Y < u64Height;
+	}
+	
+	//====================刷出数字====================
 	bool TestMerge(void) const
 	{
 		//查找所有格子的相邻，如果没有任何相邻且数值相同的格子，那么游戏失败
@@ -159,7 +172,7 @@ private:
 
 	bool SpawnNumInEmptySpace(void)
 	{
-		if (u64EmptyCount == 0 || enGameStatus != InGame)
+		if (u64EmptyCount == 0)
 		{
 			return false;
 		}
@@ -201,28 +214,8 @@ private:
 		return true;
 	}
 
-	void ClearTile(void)
-	{
-		//清除格子数据
-		std::ranges::fill(u64TileFlatView, (uint64_t)0);
-		//设置空余的格子数为最大值
-		u64EmptyCount = u64TotalSize;
-		//设置游戏状态为游戏中
-		enGameStatus = InGame;
-	}
-
-	bool TestTailIndexRange(const Pos &p) const
-	{
-		return	p.i64X >= 0 && p.i64X < u64Width &&
-				p.i64Y >= 0 && p.i64Y < u64Height;
-	}
-
-	uint64_t &GetTail(const Pos &posTarget)
-	{
-		return u64Tile[posTarget.i64Y][posTarget.i64X];
-	}
-
-	bool MoveAndAddTile(const Pos &posMove, const Pos &posTarget, bool &bMerge)
+	//====================移动合并====================
+	bool MoveOrAddNum(const Pos &posMove, const Pos &posTarget, bool &bMerge)
 	{
 		if (GetTail(posTarget) == 0)
 		{
@@ -278,13 +271,11 @@ private:
 		return true;
 	}
 
-	bool GeneralMove(Direction dMove)
+	bool MoveAndSpawn(Direction dMove)
 	{
-		bool bMove = false;
-
-		if (enGameStatus != InGame)//不是游戏状态，退出
+		if (enGameStatus != InGame)//不是游戏状态，直接退出
 		{
-			return bMove;
+			return false;
 		}
 
 		//判断方向，左右则水平，否则垂直
@@ -308,114 +299,36 @@ private:
 			i64InnerStep = -1;//倒序
 		}
 
+
+		//确认是否进行过移动
+		bool bMove = false;
 		for (int64_t i64Outer = 0; i64Outer != i64OuterEnd; ++i64Outer)//外层循环固定形式
 		{
 			bool bMerge = true;//默认状态为可合并，对于移动方向的一排中只能存在一次合并，多排之间互不影响
 			for (int64_t i64Inner = i64InnerBeg; i64Inner != i64InnerEnd; i64Inner += i64InnerStep)//根据实际水平或垂直处理内层
 			{
 				Pos p = bHorizontal ? Pos{ i64Inner, i64Outer } : Pos{ i64Outer, i64Inner };
-				bool bRet = MoveAndAddTile(arrMoveDir[dMove], p, bMerge);//移动与合并，合并时会设置输赢状态，内部不会重复检测当前游戏状态，因为可能同时出现多个2048
+				bool bRet = MoveOrAddNum(arrMoveDir[dMove], p, bMerge);//移动与合并，合并时会设置是否赢，内部不会重复检测当前游戏状态，因为可能同时出现多个2048
 				bMove |= bRet;
 			}
+		}
+
+		if (bMove && enGameStatus == InGame)//移动过且还是游戏状态，如果上面已经赢了，就没必要生成行值了，直接跳过
+		{
+			SpawnNumInEmptySpace();//这里会设置是否输
 		}
 
 		return bMove;
 	}
 
-	bool Move(Direction dMove)
-	{
-		bool bRet = GeneralMove(dMove);//这里会设置是否赢
-
-		if (bRet)
-		{
-			SpawnNumInEmptySpace();//这里会设置是否输
-		}
-
-		return bRet;
-	}
-
-	void RegisterKey(void)
-	{
-		//注册按键
-		using CILC = Console_Input::LeadCode;
-
-		auto UpFunc = [&](auto &) -> long
-		{
-			return this->Move(Game2048::Up);
-		};
-		ci.RegisterKey({ 'w' }, UpFunc);
-		ci.RegisterKey({ 'W' }, UpFunc);
-		ci.RegisterKey({ 72, CILC::Code_E0 }, UpFunc);
-
-		auto LtFunc = [&](auto &) -> long
-		{
-			return this->Move(Game2048::Lt);
-		};
-		ci.RegisterKey({ 'a' }, LtFunc);
-		ci.RegisterKey({ 'A' }, LtFunc);
-		ci.RegisterKey({ 75, CILC::Code_E0 }, LtFunc);
-
-		auto DnFunc = [&](auto &) -> long
-		{
-			return this->Move(Game2048::Dn);
-		};
-		ci.RegisterKey({ 's' }, DnFunc);
-		ci.RegisterKey({ 'S' }, DnFunc);
-		ci.RegisterKey({ 80, CILC::Code_E0 }, DnFunc);
-
-		auto RtFunc = [&](auto &) -> long
-		{
-			return this->Move(Game2048::Rt);
-		};
-		ci.RegisterKey({ 'd' }, RtFunc);
-		ci.RegisterKey({ 'D' }, RtFunc);
-		ci.RegisterKey({ 77, CILC::Code_E0 }, RtFunc);
-
-		auto RestartFunc = [&](auto &) -> long
-		{
-			if (this->PrintInfoAndQuery("You Press Restart Key!", "Restart?"))
-			{
-				StartOrRestart();
-			}
-
-			return 0;//任何时候此调用都返回0，不论是否重开，因为不触发外部绘制（重开内部会绘制）
-		};
-		ci.RegisterKey({ 'r' }, RestartFunc);
-		ci.RegisterKey({ 'R' }, RestartFunc);
-
-		auto QuitFunc = [&](auto &) -> long
-		{
-			if (this->PrintInfoAndQuery("You Press Quit Key!", "Quit?"))
-			{
-				return -1;//退出返回-1
-			}
-
-			return 0;//否则返回0，就当无事发生
-		};
-		ci.RegisterKey({ 'q' }, QuitFunc);
-		ci.RegisterKey({ 'Q' }, QuitFunc);
-	}
-
-	void StartOrRestart(void)
-	{
-		//清空格子
-		ClearTile();
-
-		//在地图中随机两点生成
-		SpawnNumInEmptySpace();
-		SpawnNumInEmptySpace();
-
-		//打印一次
-		Print();
-	}
-
-	void Print(void) const//控制台起始坐标，注意不是从0开始的，行列都从1开始
+	//====================打印信息====================
+	void PrintGame(void) const//控制台起始坐标，注意不是从0开始的，行列都从1开始
 	{
 		//缓存一下，不要修改原始变量
 		uint16_t u16StartY = u16PrintStartY;
 		uint16_t u16StartX = u16PrintStartX;
 
-		printf("\033[%u;%uH", u16StartY, u16StartX);
+		printf("\033[?25l\033[%u;%uH", u16StartY, u16StartX);//\033[?25l 隐藏光标，每次都要设置因为用户修改控制台窗口后光标可能恢复显示
 		for (auto &arrRow : u64Tile)
 		{
 			printf("---------------------\033[%u;%uH", ++u16StartY, u16StartX);
@@ -506,7 +419,89 @@ private:
 		printf("\033[2J\033[H");//清空屏幕并把光标回到左上角
 	}
 
+	//====================重置游戏====================
+	void ResetGame(void)
+	{
+		//清除格子数据
+		std::ranges::fill(u64TileFlatView, (uint64_t)0);
+		//设置空余的格子数为最大值
+		u64EmptyCount = u64TotalSize;
+		//设置游戏状态为游戏中
+		enGameStatus = InGame;
+
+		//在地图中随机两点生成
+		SpawnNumInEmptySpace();
+		SpawnNumInEmptySpace();
+
+		//打印一次
+		PrintGame();
+	}
+
+	//====================按键注册====================
+	void RegisterKey(void)
+	{
+		//注册按键
+		using CILC = Console_Input::LeadCode;
+
+		auto UpFunc = [&](auto &) -> long
+		{
+			return this->MoveAndSpawn(Game2048::Up);
+		};
+		ci.RegisterKey({ 'w' }, UpFunc);
+		ci.RegisterKey({ 'W' }, UpFunc);
+		ci.RegisterKey({ 72, CILC::Code_E0 }, UpFunc);
+
+		auto LtFunc = [&](auto &) -> long
+		{
+			return this->MoveAndSpawn(Game2048::Lt);
+		};
+		ci.RegisterKey({ 'a' }, LtFunc);
+		ci.RegisterKey({ 'A' }, LtFunc);
+		ci.RegisterKey({ 75, CILC::Code_E0 }, LtFunc);
+
+		auto DnFunc = [&](auto &) -> long
+		{
+			return this->MoveAndSpawn(Game2048::Dn);
+		};
+		ci.RegisterKey({ 's' }, DnFunc);
+		ci.RegisterKey({ 'S' }, DnFunc);
+		ci.RegisterKey({ 80, CILC::Code_E0 }, DnFunc);
+
+		auto RtFunc = [&](auto &) -> long
+		{
+			return this->MoveAndSpawn(Game2048::Rt);
+		};
+		ci.RegisterKey({ 'd' }, RtFunc);
+		ci.RegisterKey({ 'D' }, RtFunc);
+		ci.RegisterKey({ 77, CILC::Code_E0 }, RtFunc);
+
+		auto RestartFunc = [&](auto &) -> long
+		{
+			if (this->PrintInfoAndQuery("You Press Restart Key!", "Restart?"))
+			{
+				ResetGame();
+			}
+
+			return 0;//任何时候此调用都返回0，不论是否重开，因为不触发外部绘制（重开内部会绘制）
+		};
+		ci.RegisterKey({ 'r' }, RestartFunc);
+		ci.RegisterKey({ 'R' }, RestartFunc);
+
+		auto QuitFunc = [&](auto &) -> long
+		{
+			if (this->PrintInfoAndQuery("You Press Quit Key!", "Quit?"))
+			{
+				return -1;//退出返回-1
+			}
+
+			return 0;//否则返回0，就当无事发生
+		};
+		ci.RegisterKey({ 'q' }, QuitFunc);
+		ci.RegisterKey({ 'Q' }, QuitFunc);
+	}
+
 public:
+	//构造
 	Game2048(uint32_t u32Seed, uint16_t _u16PrintStartX = 1, uint16_t _u16PrintStartY = 1, double dSpawnWeights_2 = 0.8, double dSpawnWeights_4 = 0.2) :
 		u64Tile{},
 
@@ -520,24 +515,27 @@ public:
 		valueDist({ dSpawnWeights_2, dSpawnWeights_4 }),
 		posDist()
 	{}
-	~Game2048(void) = default;
+	~Game2048(void) = default;//默认析构
+
+	//删除移动、拷贝方式
 	Game2048(const Game2048 &) = delete;
 	Game2048(Game2048 &&) = delete;
 	Game2048 &operator=(const Game2048 &) = delete;
 	Game2048 &operator=(Game2048 &&) = delete;
 
+	//初始化
 	void Init(void)
 	{
 		//打印一次按键信息
 		PrintKeyInfo();
-
 		//这里必须先处理游戏
-		StartOrRestart();
+		ResetGame();
 		//然后才注册按键，防止出现提前按键问题
 		RegisterKey();
-		//初始化后，后续直接调用StartOrRestart则无问题
+		//初始化后，后续直接调用ResetGame则无问题
 	}
 	
+	//循环
 	bool Loop(void)
 	{
 		switch (ci.AtLeastOne())//处理一次按键
@@ -547,7 +545,7 @@ public:
 			return true;//直接返回
 			break;
 		case 1://调用成功
-			Print();//打印，不急着返回，后续判断输赢
+			PrintGame();//打印，不急着返回，后续判断输赢
 			break;
 		case -1://用户提前退出
 			return false;//直接返回
@@ -558,16 +556,16 @@ public:
 		case Game2048::WinGame:
 			if (!PrintInfoAndQuery("You Win!", "Restart?"))
 			{
-				return false;
+				return false;//退出
 			}
-			StartOrRestart();
+			ResetGame();//重置
 			break;
 		case Game2048::LostGame:
 			if (!PrintInfoAndQuery("You Lost...", "Restart?"))
 			{
-				return false;
+				return false;//退出
 			}
-			StartOrRestart();
+			ResetGame();//重置
 			break;
 		default:
 			break;
