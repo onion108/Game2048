@@ -50,6 +50,29 @@ public:
 		}
 	};
 
+	struct Keys {
+		constexpr static const Key W = { 'w', Code_NL };
+		constexpr static const Key SHIFT_W = { 'W', Code_NL };
+		constexpr static const Key UP_ARROW = { 72, Code_E0 };
+		constexpr static const Key A = { 'a', Code_NL };
+		constexpr static const Key SHIFT_A = { 'A', Code_NL };
+		constexpr static const Key LEFT_ARROW = { 75, Code_E0 };
+		constexpr static const Key S = { 's', Code_NL };
+		constexpr static const Key SHIFT_S = { 'S', Code_NL };
+		constexpr static const Key DOWN_ARROW = { 80, Code_E0 };
+		constexpr static const Key D = { 'd', Code_NL };
+		constexpr static const Key SHIFT_D = { 'D', Code_NL };
+		constexpr static const Key RIGHT_ARROW = { 77, Code_E0 };
+		constexpr static const Key Y = { 'y', Code_NL };
+		constexpr static const Key N = { 'n', Code_NL };
+		constexpr static const Key Q = { 'q', Code_NL };
+		constexpr static const Key R = { 'r', Code_NL };
+		constexpr static const Key SHIFT_Y = { 'Y', Code_NL };
+		constexpr static const Key SHIFT_N = { 'N', Code_NL };
+		constexpr static const Key SHIFT_Q = { 'Q', Code_NL };
+		constexpr static const Key SHIFT_R = { 'R', Code_NL };
+	};
+
 	struct KeyHash
 	{
 		size_t operator()(const Key &stKeyHash) const noexcept
