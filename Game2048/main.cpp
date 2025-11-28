@@ -509,7 +509,7 @@ private:
 
 public:
 	//构造
-	Game2048(uint32_t u32Seed, uint16_t _u16PrintStartX = 1, uint16_t _u16PrintStartY = 1, double dSpawnWeights_2 = 0.9, double dSpawnWeights_4 = 0.1) :
+	Game2048(uint32_t u32Seed = std::random_device{}(), uint16_t _u16PrintStartX = 1, uint16_t _u16PrintStartY = 1, double dSpawnWeights_2 = 0.9, double dSpawnWeights_4 = 0.1) :
 		u64Tile{},
 
 		u64EmptyCount(u64TotalSize),
@@ -652,7 +652,7 @@ int main(void)
 {
 	INIT_CONSOLE();//Windows福报
 
-	Game2048 game(std::random_device{}());
+	Game2048 game{};
 
 	//初始化
 	game.Init();
