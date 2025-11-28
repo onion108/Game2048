@@ -9,22 +9,19 @@
 
 /*
 游戏规则:
-数字2出现的概率相对4较大。
 
-在4*4的界面内
-一开始会出现两个数字，这两个数字有可能是2或者4，
-每次可以选择上下左右其中一个方向去滑动，每一次滑动，
-所有的数字方块都会往滑动的方向靠拢，
-相同数字的方块在靠拢时会相加合并成一个，
-但是每次移动方向上那一排只会合并相邻的两个，而不会连续合并，
-不同的数字则靠拢堆放，
-最后在剩余的空白处生成一个数字2或者4。
+在4*4的界面内，一开始会出现两个数字，这两个数字有可能是2或者4，
+任何时候，数字2出现的概率相对4较大。
 
-一旦获得任意一个相加后的值为2048的数字，
-则游戏成功。
+玩家每次可以选择上下左右其中一个方向去滑动，
+每一次滑动所有的数字方块都会往滑动的方向靠拢，
+相同数字的方块在靠拢时会相加合并成一个，不同的数字则靠拢堆放，
+每次移动方向上的每一排，只会合并最开始的两个相同数字，
+即便合并后下一个数字可以继续合并，也只会进行堆放，
+移动或合并后，在剩余的空白处生成一个数字2或者4。
 
-如果没有任何可以移动的空间，
-且没有任何相邻的数可以合并，则游戏失败
+一旦获得任意一个相加后的值为2048的数字，则游戏成功。
+如果没有任何空白的移动空间，且没有任何相邻的数可以合并，则游戏失败。
 */
 
 
@@ -129,25 +126,25 @@ private:
 
 private:
 	//====================辅助函数====================
-	uint64_t &GetTail(const Pos &posTarget)
+	uint64_t &GetTile(const Pos &posTarget)
 	{
 		return u64Tile[posTarget.i64Y][posTarget.i64X];
 	}
 
-	uint64_t GetRandTileValue(void)
+	uint64_t GenerateRandTileVal(void)
 	{
 		constexpr const static uint64_t u64PossibleValues[] = { 2, 4 };
 		return u64PossibleValues[valueDist(randGen)];
 	}
 
-	bool TestTailIndexRange(const Pos &p) const
+	bool IsTilePosValid(const Pos &p) const
 	{
 		return	p.i64X >= 0 && p.i64X < u64Width &&
 				p.i64Y >= 0 && p.i64Y < u64Height;
 	}
 	
 	//====================刷出数字====================
-	bool TestMerge(void) const
+	bool HasPossibleMerges(void) const
 	{
 		//查找所有格子的相邻，如果没有任何相邻且数值相同的格子，那么游戏失败
 		for (uint64_t Y = 0; Y < u64Height; ++Y)
@@ -169,7 +166,7 @@ private:
 		return false;
 	}
 
-	bool SpawnNumInEmptySpace(void)
+	bool SpawnRandomTile(void)
 	{
 		if (u64EmptyCount == 0)
 		{
@@ -197,14 +194,14 @@ private:
 			}
 
 			//是目标位置，生成并退出
-			it = GetRandTileValue();
+			it = GenerateRandTileVal();
 			break;
 		}
 
 		//检测必须在生成后，因为前面先进行递减然后才进行生成
 		if (u64EmptyCount == 0)//只要没有剩余空间，就进行合并检测
 		{
-			if (!TestMerge())//没有任何一个方向可以合并
+			if (!HasPossibleMerges())//没有任何一个方向可以合并
 			{
 				enGameStatus = LostGame;//设置输
 			}
@@ -214,9 +211,9 @@ private:
 	}
 
 	//====================移动合并====================
-	bool MoveOrAddNum(const Pos &posMove, const Pos &posTarget, bool &bMerge)
+	bool MoveOrMergeTile(const Pos &posMove, const Pos &posTarget, bool &bMerge)
 	{
-		if (GetTail(posTarget) == 0)
+		if (GetTile(posTarget) == 0)
 		{
 			return false;
 		}
@@ -226,14 +223,14 @@ private:
 		while (true)
 		{
 			Pos posNext = posNew + posMove;//计算下一位置
-			if (!TestTailIndexRange(posNext))//如果下一位置超出范围
+			if (!IsTilePosValid(posNext))//如果下一位置超出范围
 			{
 				break;//则跳过
 			}
 
-			if (GetTail(posNext) != 0)//如果下一位置非0
+			if (GetTile(posNext) != 0)//如果下一位置非0
 			{
-				if (!bMerge || GetTail(posNext) != GetTail(posTarget))//当前不允许合并或值无法合并
+				if (!bMerge || GetTile(posNext) != GetTile(posTarget))//当前不允许合并或值无法合并
 				{
 					break;//则跳过
 				}
@@ -251,7 +248,7 @@ private:
 			return false;
 		}
 
-		if (GetTail(posNew) == GetTail(posTarget))
+		if (GetTile(posNew) == GetTile(posTarget))
 		{
 			bMerge = false;//设置状态为不可合并
 			++u64EmptyCount;//合并后更新空位计数
@@ -259,10 +256,10 @@ private:
 
 		//直接把值加到当前位置
 		//这样做，如果当前是0就相当于把值移动到当前位置，否则相当于合并值到当前位置，不用区分其他情况
-		GetTail(posNew) += GetTail(posTarget);
-		GetTail(posTarget) = 0;
+		GetTile(posNew) += GetTile(posTarget);
+		GetTile(posTarget) = 0;
 
-		if (GetTail(posNew) == 2048)//如果任何一个合并获得2048
+		if (GetTile(posNew) == 2048)//如果任何一个合并获得2048
 		{
 			enGameStatus = WinGame;//则设置游戏状态为赢
 		}
@@ -270,7 +267,7 @@ private:
 		return true;
 	}
 
-	bool MoveAndSpawn(Direction dMove)
+	bool ProcessMove(Direction dMove)
 	{
 		if (enGameStatus != InGame)//不是游戏状态，直接退出
 		{
@@ -307,21 +304,21 @@ private:
 			for (int64_t i64Inner = i64InnerBeg; i64Inner != i64InnerEnd; i64Inner += i64InnerStep)//根据实际水平或垂直处理内层
 			{
 				Pos p = bHorizontal ? Pos{ i64Inner, i64Outer } : Pos{ i64Outer, i64Inner };
-				bool bRet = MoveOrAddNum(arrMoveDir[dMove], p, bMerge);//移动与合并，合并时会设置是否赢，内部不会重复检测当前游戏状态，因为可能同时出现多个2048
+				bool bRet = MoveOrMergeTile(arrMoveDir[dMove], p, bMerge);//移动与合并，合并时会设置是否赢，内部不会重复检测当前游戏状态，因为可能同时出现多个2048
 				bMove |= bRet;
 			}
 		}
 
 		if (bMove && enGameStatus == InGame)//移动过且还是游戏状态，如果上面已经赢了，就没必要生成行值了，直接跳过
 		{
-			SpawnNumInEmptySpace();//这里会设置是否输
+			SpawnRandomTile();//这里会设置是否输
 		}
 
 		return bMove;
 	}
 
 	//====================打印信息====================
-	void PrintGame(void) const//控制台起始坐标，注意不是从0开始的，行列都从1开始
+	void PrintGameBoard(void) const//控制台起始坐标，注意不是从0开始的，行列都从1开始
 	{
 		//缓存一下，不要修改原始变量
 		uint16_t u16StartY = u16PrintStartY;
@@ -347,17 +344,17 @@ private:
 		printf("---------------------\033[%u;%uH", ++u16StartY, u16StartX);
 	}
 
-	bool PrintInfoAndQuery(const char *pInfo, const char *pQuery) const
+	bool ShowMessageAndPrompt(const char *pMessage, const char *pPrompt) const
 	{
 		//缓存一下，不要修改原始变量
 		uint16_t u16StartY = u16PrintStartY;
 		uint16_t u16StartX = u16PrintStartX;
 
 		//输出信息
-		printf("\033[%u;%uH%s", u16StartY += (u64Height * 2 + 1), u16StartX, pInfo);
+		printf("\033[%u;%uH%s", u16StartY += (u64Height * 2 + 1), u16StartX, pMessage);
 
 		//询问是否重开
-		printf("\033[%u;%uH%s (Y/N)", ++u16StartY, u16StartX, pQuery);
+		printf("\033[%u;%uH%s (Y/N)", ++u16StartY, u16StartX, pPrompt);
 		auto waitKey = ci.WaitForKeys({ {'y'},{'Y'},{'n'},{'N'} });
 
 		//保存按键信息
@@ -429,11 +426,11 @@ private:
 		enGameStatus = InGame;
 
 		//在地图中随机两点生成
-		SpawnNumInEmptySpace();
-		SpawnNumInEmptySpace();
+		SpawnRandomTile();
+		SpawnRandomTile();
 
 		//打印一次
-		PrintGame();
+		PrintGameBoard();
 	}
 
 	//====================按键注册====================
@@ -444,7 +441,7 @@ private:
 
 		auto UpFunc = [&](auto &) -> long
 		{
-			return this->MoveAndSpawn(Game2048::Up);
+			return this->ProcessMove(Game2048::Up);
 		};
 		ci.RegisterKey({ 'w' }, UpFunc);
 		ci.RegisterKey({ 'W' }, UpFunc);
@@ -452,7 +449,7 @@ private:
 
 		auto LtFunc = [&](auto &) -> long
 		{
-			return this->MoveAndSpawn(Game2048::Lt);
+			return this->ProcessMove(Game2048::Lt);
 		};
 		ci.RegisterKey({ 'a' }, LtFunc);
 		ci.RegisterKey({ 'A' }, LtFunc);
@@ -460,7 +457,7 @@ private:
 
 		auto DnFunc = [&](auto &) -> long
 		{
-			return this->MoveAndSpawn(Game2048::Dn);
+			return this->ProcessMove(Game2048::Dn);
 		};
 		ci.RegisterKey({ 's' }, DnFunc);
 		ci.RegisterKey({ 'S' }, DnFunc);
@@ -468,7 +465,7 @@ private:
 
 		auto RtFunc = [&](auto &) -> long
 		{
-			return this->MoveAndSpawn(Game2048::Rt);
+			return this->ProcessMove(Game2048::Rt);
 		};
 		ci.RegisterKey({ 'd' }, RtFunc);
 		ci.RegisterKey({ 'D' }, RtFunc);
@@ -476,7 +473,7 @@ private:
 
 		auto RestartFunc = [&](auto &) -> long
 		{
-			if (this->PrintInfoAndQuery("You Press Restart Key!", "Restart?"))
+			if (this->ShowMessageAndPrompt("You Press Restart Key!", "Restart?"))
 			{
 				ResetGame();
 			}
@@ -488,7 +485,7 @@ private:
 
 		auto QuitFunc = [&](auto &) -> long
 		{
-			if (this->PrintInfoAndQuery("You Press Quit Key!", "Quit?"))
+			if (this->ShowMessageAndPrompt("You Press Quit Key!", "Quit?"))
 			{
 				return -1;//退出返回-1
 			}
@@ -544,7 +541,7 @@ public:
 			return true;//直接返回
 			break;
 		case 1://调用成功
-			PrintGame();//打印，不急着返回，后续判断输赢
+			PrintGameBoard();//打印，不急着返回，后续判断输赢
 			break;
 		case -1://用户提前退出
 			return false;//直接返回
@@ -553,14 +550,14 @@ public:
 		switch (enGameStatus)//判断一下输赢
 		{
 		case Game2048::WinGame:
-			if (!PrintInfoAndQuery("You Win!", "Restart?"))
+			if (!ShowMessageAndPrompt("You Win!", "Restart?"))
 			{
 				return false;//退出
 			}
 			ResetGame();//重置
 			break;
 		case Game2048::LostGame:
-			if (!PrintInfoAndQuery("You Lost...", "Restart?"))
+			if (!ShowMessageAndPrompt("You Lost...", "Restart?"))
 			{
 				return false;//退出
 			}
